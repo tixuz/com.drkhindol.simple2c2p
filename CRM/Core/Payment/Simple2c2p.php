@@ -19,7 +19,8 @@ use Civi\Payment\PropertyBag;
 /**
  * Simple2c2p payment processor
  */
-class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
+class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment
+{
 
     protected $_mode;
     protected $_doDirectPaymentResult = [];
@@ -34,7 +35,7 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
         'MultipleConcurrentPayments' => FALSE,
         'EditRecurringContribution' => FALSE,
         'CancelRecurringNotifyOptional' => FALSE,
-        'BackOffice' => FALSE,
+        'BackOffice' => TRUE,
         'NoEmailProvided' => TRUE,
         'CancelRecurring' => TRUE,
         'FutureRecurStartDate' => TRUE,
@@ -42,18 +43,43 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
     ];
 
     /**
+     * @param $result
+     * @return mixed
+     */
+    private static function getEmptyComplitedPaymentResult()
+    {
+// The function needs to cope with the possibility of it being zero
+        // this is because historically it was thought some processors
+        // might want to do something with $0 amounts. It is unclear if this is the
+        // case but it is baked in now.
+        $result = [];
+        $result['payment_status_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+        $result['payment_status'] = 'Completed';
+        return $result;
+    }
+
+    /**
+     * @param $params
+     * @return mixed
+     */
+    private static function castParamsToPropertyBug(&$params)
+    {
+        return \Civi\Payment\PropertyBag::cast($params);
+    }
+
+    /**
      * Set result from do Direct Payment for test purposes.
      *
      * @param array $doDirectPaymentResult
      *  Result to be returned from test.
      */
-    public function setDoDirectPaymentResult($doDirectPaymentResult) {
+    public function setDoDirectPaymentResult($doDirectPaymentResult)
+    {
         $this->_doDirectPaymentResult = $doDirectPaymentResult;
         if (empty($this->_doDirectPaymentResult['trxn_id'])) {
             $this->_doDirectPaymentResult['trxn_id'] = [];
-        }
-        else {
-            $this->_doDirectPaymentResult['trxn_id'] = (array) $doDirectPaymentResult['trxn_id'];
+        } else {
+            $this->_doDirectPaymentResult['trxn_id'] = (array)$doDirectPaymentResult['trxn_id'];
         }
     }
 
@@ -65,7 +91,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
      *
      * @param array $paymentProcessor
      */
-    public function __construct($mode, &$paymentProcessor) {
+    public function __construct($mode, &$paymentProcessor)
+    {
         $this->_mode = $mode;
         $this->_paymentProcessor = $paymentProcessor;
     }
@@ -75,7 +102,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
      *
      * @return bool
      */
-    public function supportsRefund() {
+    public function supportsRefund()
+    {
         return $this->supports['Refund'];
     }
 
@@ -86,7 +114,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
      *
      * @return bool
      */
-    public function supportsFutureRecurStartDate() {
+    public function supportsFutureRecurStartDate()
+    {
         return $this->supports['FutureRecurStartDate'];
     }
 
@@ -99,7 +128,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
      *
      * @return bool
      */
-    protected function supportsMultipleConcurrentPayments() {
+    protected function supportsMultipleConcurrentPayments()
+    {
         return $this->supports['MultipleConcurrentPayments'];
     }
 
@@ -108,7 +138,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
      *
      * @return bool
      */
-    public function supportsEditRecurringContribution() {
+    public function supportsEditRecurringContribution()
+    {
         return $this->supports['EditRecurringContribution'];
     }
 
@@ -122,7 +153,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
      *
      * @return bool
      */
-    protected function supportsBackOffice() {
+    protected function supportsBackOffice()
+    {
         return $this->supports['BackOffice'];
     }
 
@@ -137,7 +169,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
      *
      * @return bool
      */
-    protected function supportsNoEmailProvided() {
+    protected function supportsNoEmailProvided()
+    {
         return $this->supports['NoEmailProvided'];
     }
 
@@ -150,7 +183,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
      *
      * @return bool
      */
-    protected function supportsCancelRecurring() {
+    protected function supportsCancelRecurring()
+    {
         return $this->supports['CancelRecurring'];
     }
 
@@ -163,7 +197,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
      *
      * @return bool
      */
-    protected function supportsCancelRecurringNotifyOptional() {
+    protected function supportsCancelRecurringNotifyOptional()
+    {
         return $this->supports['CancelRecurringNotifyOptional'];
     }
 
@@ -171,44 +206,69 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
      * Set the return value of support functions. By default it is TRUE
      *
      */
-    public function setSupports(array $support) {
+    public function setSupports(array $support)
+    {
         $this->supports = array_merge($this->supports, $support);
     }
 
     /**
-     * @param array|PropertyBag $params
+     * Make a payment by interacting with an external payment processor.
      *
+     * @param array|PropertyBag $params
+     *   This may be passed in as an array or a \Civi\Payment\PropertyBag
+     *   It holds all the values that have been collected to make the payment (eg. amount, address, currency, email).
+     *
+     * These values are documented at https://docs.civicrm.org/dev/en/latest/extensions/payment-processors/create/#available-parameters
+     * h
+     *   You can explicitly cast to PropertyBag and then work with that to get standardised keys and helpers to interact with the values passed in.
+     *   See
+     *   Also https://docs.civicrm.org/dev/en/latest/extensions/payment-processors/create/#introducing-propertybag-objects explains how to interact with params as a property bag.
+     *   Passed by reference to comply with the parent function but **should not be altered**.
      * @param string $component
+     *   Component is either 'contribution' or 'event' and is primarily used to determine the url
+     *   to return the browser to. (Membership purchases come through as 'contribution'.)
      *
      * @return array
-     *   Result array (containing at least the key payment_status_id)
+     *   Result array:
+     *   - MUST contain payment_status (Completed|Pending)
+     *   - MUST contain payment_status_id
+     *   - MAY contain trxn_id
+     *   - MAY contain fee_amount
+     *   See: https://lab.civicrm.org/dev/financial/-/issues/141
      *
      * @throws \Civi\Payment\Exception\PaymentProcessorException
      */
-    public function doPayment(&$params, $component = 'contribute') {
+    public function doPayment(&$params, $component = 'contribute')
+    {
+        /* @var \Civi\Payment\PropertyBag $propertyBag */
+        $propertyBag = self::castParamsToPropertyBug($params);
+
+        if ($propertyBag->getAmount() == 0) {
+            $result = self::getEmptyComplitedPaymentResult();
+            return $result;
+        }
         $this->_component = $component;
         $statuses = CRM_Contribute_BAO_Contribution::buildOptions('contribution_status_id', 'validate');
 
-        $propertyBag = PropertyBag::cast($params);
 
-        // If we have a $0 amount, skip call to processor and set payment_status to Completed.
-        // Conceivably a processor might override this - perhaps for setting up a token - but we don't
-        // have an example of that at the mome.
-        if ($propertyBag->getAmount() == 0) {
-            $result['payment_status_id'] = array_search('Completed', $statuses);
-            $result['payment_status'] = 'Completed';
-            return $result;
+        // Prepare whatever data the 3rd party processor requires to take a payment.
+        // The contents of the array below are just examples of typical things that
+        // might be used.
+        $processorFormattedParams = [
+            'authentication_key' => $this->getPaymentProcessor()['user_name'],
+            'amount' => $propertyBag->getAmount(),
+            'order_id' => $propertyBag->getter('contributionID', TRUE, ''),
+            // getNotifyUrl helps you construct the url to tell an off-site
+            // processor where to send payment notifications (IPNs/webhooks) to.
+            // Not all 3rd party processors need this.
+            'notifyUrl' => $this->getNotifyUrl(),
+            // etc. depending on the features and requirements of the 3rd party API.
+        ];
+        if ($propertyBag->has('description')) {
+            $processorFormattedParams['description'] = $propertyBag->getDescription();
         }
 
-        // Invoke hook_civicrm_paymentProcessor
-        // In Dummy's case, there is no translation of parameters into
-        // the back-end's canonical set of parameters.  But if a processor
-        // does this, it needs to invoke this hook after it has done translation,
-        // but before it actually starts talking to its proprietary back-end.
-        if ($propertyBag->getIsRecur()) {
-            $throwAnENoticeIfNotSetAsTheseAreRequired = $propertyBag->getRecurFrequencyInterval() . $propertyBag->getRecurFrequencyUnit();
-        }
-        // no translation in Dummy processor
+
         CRM_Utils_Hook::alterPaymentProcessorParams($this, $params, $propertyBag);
         // This means we can test failing transactions by setting a past year in expiry. A full expiry check would
         // be more complete.
@@ -241,8 +301,7 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
                 // See comment block.
                 $result['payment_status_id'] = array_search('Pending', $statuses);
                 $result['payment_status'] = 'Pending';
-            }
-            else {
+            } else {
                 $result['payment_status_id'] = array_search('Completed', $statuses);
                 $result['payment_status'] = 'Completed';
             }
@@ -254,12 +313,14 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
     /**
      * Submit a refund payment
      *
-     * @throws \Civi\Payment\Exception\PaymentProcessorException
-     *
      * @param array $params
      *   Assoc array of input parameters for this transaction.
+     * @throws \Civi\Payment\Exception\PaymentProcessorException
+     *
      */
-    public function doRefund(&$params) {}
+    public function doRefund(&$params)
+    {
+    }
 
     /**
      * This function checks to see if we have the right config values.
@@ -267,7 +328,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
      * @return string
      *   the error message if any
      */
-    public function checkConfig() {
+    public function checkConfig()
+    {
         return NULL;
     }
 
@@ -296,7 +358,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
      *
      * @return array
      */
-    public function getEditableRecurringScheduleFields() {
+    public function getEditableRecurringScheduleFields()
+    {
         return ['amount', 'next_sched_contribution_date'];
     }
 
@@ -317,7 +380,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
      *
      * @throws \Civi\Payment\Exception\PaymentProcessorException
      */
-    public function doCancelRecurring(PropertyBag $propertyBag) {
+    public function doCancelRecurring(PropertyBag $propertyBag)
+    {
         return ['message' => ts('Recurring contribution cancelled')];
     }
 
@@ -330,11 +394,12 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment {
      *
      * @return string
      */
-    protected function getTrxnID() {
+    protected function getTrxnID()
+    {
         $string = $this->_mode;
         $trxn_id = CRM_Core_DAO::singleValueQuery("SELECT MAX(trxn_id) FROM civicrm_contribution WHERE trxn_id LIKE '{$string}_%'") ?? '';
         $trxn_id = str_replace($string, '', $trxn_id);
-        $trxn_id = (int) $trxn_id + 1;
+        $trxn_id = (int)$trxn_id + 1;
         return $string . '_' . $trxn_id . '_' . uniqid();
     }
 
