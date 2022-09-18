@@ -121,8 +121,6 @@ class CRM_Simple2c2p_Utils
      */
     public static function setContributionStatusCancelledOrFailed($contribution, $reason_message = '2c2p Error', $status = 'Cancelled'): void
     {
-//        CRM_Core_Error::debug_var('contribution', $contribution);
-//        Civi::log()->info("setContributionStatusCancelled1");
         $cancelled_status_id = self::contribution_status_id($status);
         $contribution_status_id = $contribution['contribution_status_id'];
         $reason_message = mb_substr($reason_message, 0, 254);
@@ -133,11 +131,14 @@ class CRM_Simple2c2p_Utils
             return;
         }
 
-
-        $change_result0 = CRM_Core_DAO::setFieldValue('CRM_Contribute_DAO_Contribution',
-            $contribution['id'],
-            'cancel_reason',
-            $reason_message);
+        try {
+            $change_result0 = CRM_Core_DAO::setFieldValue('CRM_Contribute_DAO_Contribution',
+                $contribution['id'],
+                'cancel_reason',
+                $reason_message);
+        } catch (\Exception $e) {
+            CRM_Core_Error::debug_var('Error in setContributionStatusCancelledOrFailed: ', $e->getMessage());
+        }
 
         try {
             $change_result1 = CRM_Core_DAO::setFieldValue('CRM_Contribute_DAO_Contribution',
@@ -149,10 +150,14 @@ class CRM_Simple2c2p_Utils
         }
 
         $now = date('YmdHis');
-        $change_result2 = CRM_Core_DAO::setFieldValue('CRM_Contribute_DAO_Contribution',
-            $contribution['id'],
-            'cancel_date',
-            $now);
+        try {
+            $change_result2 = CRM_Core_DAO::setFieldValue('CRM_Contribute_DAO_Contribution',
+                $contribution['id'],
+                'cancel_date',
+                $now);
+        } catch (\Exception $e) {
+            CRM_Core_Error::debug_var('Error in setContributionStatusCancelledOrFailed: ', $e->getMessage());
+        }
         self::write_log($now, 'setContributionStatusCancelledOrFailed now');
     }
 

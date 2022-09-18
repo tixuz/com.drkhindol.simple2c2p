@@ -686,7 +686,6 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment
         $notOKUrl = $this->getFailureUrl();
         $encodedPaymentResponse = $params['paymentResponse'];
         $paymentResponse = CRM_Simple2c2p_Utils::getDecodedPayload64($encodedPaymentResponse);
-        CRM_Core_Error::debug_var('getbackparams', $paymentResponse);
         CRM_Simple2c2p_Utils::write_log($paymentResponse, 'processPaymentNotification paymentResponse');
         $token = self::getPaymentTokenViaInvoiceID($invoice_id);
         $payment_inquery_responce = $this->getPaymentInquiryViaPaymentToken($invoice_id, $token);
