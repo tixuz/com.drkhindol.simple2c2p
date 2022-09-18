@@ -2,44 +2,6 @@
 
 use CRM_Simple2c2p_ExtensionUtil as E;
 
-//use Jose\Component\KeyManagement\JWKFactory;
-//use Jose\Component\Core\AlgorithmManager;
-//use Jose\Component\Encryption\{
-//    Algorithm\KeyEncryption\RSAOAEP,
-//    Algorithm\ContentEncryption\A256GCM,
-//    Compression\CompressionMethodManager,
-//    Compression\Deflate,
-//    JWEBuilder,
-//    JWELoader,
-//    JWEDecrypter,
-//    JWETokenSupport,
-//    Serializer\CompactSerializer as EncryptionCompactSerializer,
-//    Serializer\JWESerializerManager
-//};
-//
-//use \Jose\Component\Checker\AlgorithmChecker;
-//use \Jose\Component\Checker\HeaderCheckerManager;
-//use Jose\Component\Signature\{
-//    Algorithm\PS256,
-//    JWSBuilder,
-//    JWSTokenSupport,
-//    JWSLoader,
-//    JWSVerifier,
-//    Serializer\JWSSerializerManager,
-//    Serializer\CompactSerializer as SignatureCompactSerializer};
-
-//$autoload = __DIR__ . '/vendor/autoload.php';
-//if (file_exists($autoload)) {
-////    CRM_Core_Error::debug_var('autoload1', $autoload);
-//    require_once $autoload;
-//} else {
-//    $autoload = E::path() . '/vendor/autoload.php';
-//    if (file_exists($autoload)) {
-//        require_once $autoload;
-////        CRM_Core_Error::debug_var('autoload2', $autoload);
-//    }
-//}
-
 use \Firebase\JWT\JWT;
 
 class CRM_Simple2c2p_Utils
@@ -164,8 +126,9 @@ class CRM_Simple2c2p_Utils
         $cancelled_status_id = self::contribution_status_id($status);
         $contribution_status_id = $contribution['contribution_status_id'];
         $reason_message = mb_substr($reason_message, 0, 254);
-        CRM_Core_Error::debug_var('contribution_status_id', $contribution_status_id);
-        CRM_Core_Error::debug_var('reason_message', $reason_message);
+        self::write_log($contribution_status_id, 'setContributionStatusCancelledOrFailed contribution_status_id');
+        self::write_log($reason_message, 'setContributionStatusCancelledOrFailed reason_message');
+
         if ($contribution_status_id == $cancelled_status_id) {
             return;
         }
@@ -190,8 +153,7 @@ class CRM_Simple2c2p_Utils
             $contribution['id'],
             'cancel_date',
             $now);
-        CRM_Core_Error::debug_var('now', $now);
-
+        self::write_log($now, 'setContributionStatusCancelledOrFailed now');
     }
 
 
@@ -204,5 +166,26 @@ class CRM_Simple2c2p_Utils
         return CRM_Utils_Array::key($name, \CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name'));
     }
 
+    /**
+     * @param $input
+     * @param $preffix_log
+     */
+    public static function write_log($input, $preffix_log)
+    {
+        $simple2c2p_settings = CRM_Core_BAO_Setting::getItem("Simple2c2p Settings", 'simple2c2p_settings');
+        if ($simple2c2p_settings['save_log'] == '1') {
+            $masquerade_input = $input;
+            if (is_array($masquerade_input)) {
+                $fields_to_hide = ['Signature'];
+                foreach ($fields_to_hide as $field_to_hide) {
+                    unset($masquerade_input[$field_to_hide]);
+                }
+                Civi::log()->debug($preffix_log . "\n" . print_r($masquerade_input, TRUE));
+                return;
+            }
+            Civi::log()->debug($preffix_log . "\n" . $masquerade_input);
+            return;
+        }
+    }
 
 }

@@ -667,7 +667,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment
     public function processPaymentNotification($params)
     {
 //        $failureUrl = strval();
-        CRM_Core_Error::debug_var('getbackparams', $params);
+
+        CRM_Simple2c2p_Utils::write_log($params, 'processPaymentNotification first_params');
         $processor_name = $this->_paymentProcessor['name']; //Get processor_name from 2C2P PGW Dashboard
         $processor_id = $this->_paymentProcessor['id']; //Get processor_name from 2C2P PGW Dashboard
         $payment_instrument_id = $this->_paymentProcessor['payment_instrument_id'];
@@ -686,9 +687,10 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment
         $encodedPaymentResponse = $params['paymentResponse'];
         $paymentResponse = CRM_Simple2c2p_Utils::getDecodedPayload64($encodedPaymentResponse);
         CRM_Core_Error::debug_var('getbackparams', $paymentResponse);
+        CRM_Simple2c2p_Utils::write_log($paymentResponse, 'processPaymentNotification paymentResponse');
         $token = self::getPaymentTokenViaInvoiceID($invoice_id);
         $payment_inquery_responce = $this->getPaymentInquiryViaPaymentToken($invoice_id, $token);
-        CRM_Core_Error::debug_var('payment_inquery', $payment_inquery_responce);
+        CRM_Simple2c2p_Utils::write_log($payment_inquery_responce, 'processPaymentNotification payment_inquery_responce');
         $totalAmount = CRM_Utils_Array::value('amount', $payment_inquery_responce);
         $last4CardsOfCardIfReturnedHere = substr($payment_inquery_responce['cardNo'], -4);
         $redirectUrl = $notOKUrl;
@@ -921,7 +923,7 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment
         $params['destination'] = 'front';
 
         $payload = $this->preparePaymentPayload($params, $component);
-        CRM_Core_Error::debug_var('first_payload', $payload);
+        CRM_Simple2c2p_Utils::write_log($payload, 'get_webPaymentUrl first_payload');
         list($webPaymentUrl, $simple2c2pToken) = $this->getPaymentTokenResponse($payload);
 
         $paymentToken = $this->save2c2pToken($params, $simple2c2pToken, $webPaymentUrl);
@@ -946,6 +948,7 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment
         if (array_key_exists('values', $contribution)) {
             $contribution = $contribution['values'];
             $contribution = reset($contribution);
+            CRM_Simple2c2p_Utils::write_log($contribution, 'getContribution contribution');
             return $contribution;
         } else {
             new PaymentProcessorException('2c2p Error: Unvalid Contribution');
