@@ -23,7 +23,7 @@
             <td class="label">{$form.force_3ds.label}</td>
             <td>{$form.force_3ds.html}
                 <br>
-                <span class="description">Save the log of all transactions in ConfigAndLog</span></td>
+                <span class="description">Force 3ds check. Disable it if this check does not work</span></td>
         </tr>
         </tbody>
     </table>
