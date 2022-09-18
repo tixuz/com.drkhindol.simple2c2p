@@ -8,6 +8,7 @@ class CRM_Simple2c2p_Form_Settings extends CRM_Core_Form
     public function buildQuickForm()
     {
         $this->add('checkbox', 'save_log', 'Save log of all transactions');
+        $this->add('checkbox', 'force_3ds', 'Force 3DS Check');
         $this->add('text', 'ok_url', 'Thank You Page', ['size' => 100]);
         $this->add('text', 'not_ok_url', 'Sorry Page', ['size' => 100]);
 
@@ -36,6 +37,7 @@ class CRM_Simple2c2p_Form_Settings extends CRM_Core_Form
         $values = $this->exportValues();
         $simple2c2p_settings['save_log'] = $values['save_log'];
         $simple2c2p_settings['ok_url'] = $values['ok_url'];
+        $simple2c2p_settings['force_3ds'] = $values['force_3ds'];
         $simple2c2p_settings['not_ok_url'] = $values['not_ok_url'];
 
         CRM_Core_BAO_Setting::setItem($simple2c2p_settings, "Simple2c2p Settings", 'simple2c2p_settings');

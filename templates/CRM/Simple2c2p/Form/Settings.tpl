@@ -19,6 +19,12 @@
                 <br>
                 <span class="description">Save the log of all transactions in ConfigAndLog</span></td>
         </tr>
+        <tr>
+            <td class="label">{$form.force_3ds.label}</td>
+            <td>{$form.force_3ds.html}
+                <br>
+                <span class="description">Save the log of all transactions in ConfigAndLog</span></td>
+        </tr>
         </tbody>
     </table>
     <div class="crm-submit-buttons">

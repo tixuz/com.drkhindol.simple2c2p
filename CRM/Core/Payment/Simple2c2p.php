@@ -30,6 +30,7 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment
     const PARTICIPANTID = 'pid';
     const EVENTID = 'eid';
     protected $_mode;
+    protected $_settings;
     protected $_secretKey;
     protected $_merchantID;
     protected $_gatewayURL;
@@ -391,6 +392,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment
     {
         $this->_mode = $mode;
         $this->_paymentProcessor = $paymentProcessor;
+        $simple2c2p_settings = CRM_Core_BAO_Setting::getItem("Simple2c2p Settings", 'simple2c2p_settings');
+        $this->_settings = $simple2c2p_settings;
         $this->_secretKey = $paymentProcessor['password'];    //Get SecretKey from 2C2P PGW Dashboard
         $this->_merchantID = $paymentProcessor['user_name'];  //Get MerchantID when opening account with 2C2P
         $this->_gatewayURL = $this->_paymentProcessor['url_site'];
@@ -650,7 +653,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment
         $this->_secretKey = $paymentProcessor['password'];    //Get SecretKey from 2C2P PGW Dashboard
         $this->_merchantID = $paymentProcessor['user_name'];  //Get MerchantID when opening account with 2C2P
         $this->_gatewayURL = $this->_paymentProcessor['url_site'];
-
+        $simple2c2p_settings = CRM_Core_BAO_Setting::getItem("Simple2c2p Settings", 'simple2c2p_settings');
+        $this->_settings = $simple2c2p_settings;
         $this->processPaymentNotification($params);
     }
 
@@ -677,8 +681,8 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment
         $participant_id = CRM_Utils_Array::value(self::PARTICIPANTID, $params);
         $event_id = CRM_Utils_Array::value(self::EVENTID, $params);
         $contribution = self::getContribution($contribution_id);
-        $okUrl = "https://kun.uz";
-        $notOKUrl = "https://qalampir.uz";
+        $okUrl = $this->getThanxUrl();
+        $notOKUrl = $this->getFailureUrl();
         $encodedPaymentResponse = $params['paymentResponse'];
         $paymentResponse = CRM_Simple2c2p_Utils::getDecodedPayload64($encodedPaymentResponse);
         CRM_Core_Error::debug_var('getbackparams', $paymentResponse);
@@ -811,15 +815,20 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment
         $displayName = $params['displayName'];
         $currency = 'SGD'; //works only with SGD
         $frontendReturnUrl = $this->getReturnUrl($params, $component);
-
-
+        $request3DS = CRM_Utils_Array::value('force_3ds', $this->_settings);
+        if (TRUE === boolval($request3DS)) {
+            $request3DS = "F";
+        }
+        if (FALSE === boolval($request3DS)) {
+            $request3DS = "N";
+        }
         $payload = array(
             "merchantID" => $merchantID,
             "invoiceNo" => $invoiceNo,
             "description" => $description,
             "amount" => $amount,
             "currencyCode" => $currency,
-//            "request3DS" => "N",
+            "request3DS" => $request3DS,
             "frontendReturnUrl" => $frontendReturnUrl,
 //            "backendReturnUrl" => $frontendReturnUrl,
             "uiParams" => [
@@ -828,6 +837,7 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment
                     "name" => $displayName
                 ]
             ],
+            "paymentChannel" => ["CC"]
         );
         return $payload;
     }
@@ -999,6 +1009,54 @@ class CRM_Core_Payment_Simple2c2p extends CRM_Core_Payment
 //            throw new CRM_Core_Exception(ts('2c2p - Could not find payment token') . "\nInvoiceID: $invoiceID\n");
         }
         return $token;
+    }
+
+    /**
+     * @param $paymentProcessor
+     * @return string
+     * @throws CRM_Core_Exception
+     */
+    protected function getThanxUrl(): string
+    {
+
+        $ok_url = strval(CRM_Utils_Array::value('ok_url', $this->_settings));
+        $ok_url = $this->getPageUrl($ok_url);
+        return $ok_url;
+    }
+
+    /**
+     * @param $paymentProcessor
+     * @return string
+     * @throws CRM_Core_Exception
+     * $path = NULL,
+     * $query = NULL,
+     * $absolute = FALSE,
+     * $fragment = NULL,
+     * $htmlize = TRUE,
+     * $frontend = FALSE,
+     * $forceBackend = FALSE
+     */
+    protected function getFailureUrl(): string
+    {
+        $not_ok_url = strval(CRM_Utils_Array::value('not_ok_url', $this->_settings));
+        $not_ok_url = $this->getPageUrl($not_ok_url);
+        return $not_ok_url;
+    }
+
+    /**
+     * @param string $page_url
+     * @return string
+     */
+    protected function getPageUrl(string $page_url): string
+    {
+        if ($page_url == null || $page_url == "") {
+            $page_url = CRM_Utils_System::url();
+        }
+        if (FALSE === strpos($page_url, "http", 0)) {
+            $config = CRM_Core_Config::singleton();
+            $page_url = $config->userFrameworkBaseURL . "/" . $page_url;
+        }
+        return $page_url;
     }
 
 
