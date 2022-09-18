@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/simple2c2p/settings</path>
+    <page_callback>CRM_Simple2c2p_Form_Settings</page_callback>
+    <title>Simple2c2p Settings</title>
+    <access_arguments>administer CiviCRM</access_arguments>
+  </item>
+</menu>

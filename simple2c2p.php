@@ -1,8 +1,10 @@
 <?php
 
 require_once 'simple2c2p.civix.php';
+
 // phpcs:disable
 use CRM_Simple2c2p_ExtensionUtil as E;
+
 // phpcs:enable
 
 /**
@@ -10,8 +12,9 @@ use CRM_Simple2c2p_ExtensionUtil as E;
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_config/
  */
-function simple2c2p_civicrm_config(&$config) {
-  _simple2c2p_civix_civicrm_config($config);
+function simple2c2p_civicrm_config(&$config)
+{
+    _simple2c2p_civix_civicrm_config($config);
 }
 
 /**
@@ -19,8 +22,9 @@ function simple2c2p_civicrm_config(&$config) {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_install
  */
-function simple2c2p_civicrm_install() {
-  _simple2c2p_civix_civicrm_install();
+function simple2c2p_civicrm_install()
+{
+    _simple2c2p_civix_civicrm_install();
 }
 
 /**
@@ -28,8 +32,9 @@ function simple2c2p_civicrm_install() {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_postInstall
  */
-function simple2c2p_civicrm_postInstall() {
-  _simple2c2p_civix_civicrm_postInstall();
+function simple2c2p_civicrm_postInstall()
+{
+    _simple2c2p_civix_civicrm_postInstall();
 }
 
 /**
@@ -37,8 +42,9 @@ function simple2c2p_civicrm_postInstall() {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_uninstall
  */
-function simple2c2p_civicrm_uninstall() {
-  _simple2c2p_civix_civicrm_uninstall();
+function simple2c2p_civicrm_uninstall()
+{
+    _simple2c2p_civix_civicrm_uninstall();
 }
 
 /**
@@ -46,8 +52,9 @@ function simple2c2p_civicrm_uninstall() {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_enable
  */
-function simple2c2p_civicrm_enable() {
-  _simple2c2p_civix_civicrm_enable();
+function simple2c2p_civicrm_enable()
+{
+    _simple2c2p_civix_civicrm_enable();
 }
 
 /**
@@ -55,8 +62,9 @@ function simple2c2p_civicrm_enable() {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_disable
  */
-function simple2c2p_civicrm_disable() {
-  _simple2c2p_civix_civicrm_disable();
+function simple2c2p_civicrm_disable()
+{
+    _simple2c2p_civix_civicrm_disable();
 }
 
 /**
@@ -64,8 +72,9 @@ function simple2c2p_civicrm_disable() {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_upgrade
  */
-function simple2c2p_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
-  return _simple2c2p_civix_civicrm_upgrade($op, $queue);
+function simple2c2p_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL)
+{
+    return _simple2c2p_civix_civicrm_upgrade($op, $queue);
 }
 
 /**
@@ -75,8 +84,9 @@ function simple2c2p_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
  */
-function simple2c2p_civicrm_entityTypes(&$entityTypes) {
-  _simple2c2p_civix_civicrm_entityTypes($entityTypes);
+function simple2c2p_civicrm_entityTypes(&$entityTypes)
+{
+    _simple2c2p_civix_civicrm_entityTypes($entityTypes);
 }
 
 // --- Functions below this ship commented out. Uncomment as required. ---
@@ -95,14 +105,16 @@ function simple2c2p_civicrm_entityTypes(&$entityTypes) {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_navigationMenu
  */
-//function simple2c2p_civicrm_navigationMenu(&$menu) {
-//  _simple2c2p_civix_insert_navigation_menu($menu, 'Mailings', [
-//    'label' => E::ts('New subliminal message'),
-//    'name' => 'mailing_subliminal_message',
-//    'url' => 'civicrm/mailing/subliminal',
-//    'permission' => 'access CiviMail',
-//    'operator' => 'OR',
-//    'separator' => 0,
-//  ]);
-//  _simple2c2p_civix_navigationMenu($menu);
-//}
+function simple2c2p_civicrm_navigationMenu(&$menu)
+{
+    _simple2c2p_civix_insert_navigation_menu($menu, 'Administer/CiviContribute', [
+        'label' => E::ts('Simple2c2p Settings'),
+        'name' => 'simple2c2p_settings',
+        'url' => 'civicrm/simple2c2p/settings',
+        'permission' => 'administer CiviCRM',
+        'operator' => 'OR',
+        'has_separator' => 1,
+        'is_active' => 1,
+    ]);
+    _simple2c2p_civix_navigationMenu($menu);
+}
