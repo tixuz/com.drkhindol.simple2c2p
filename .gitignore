@@ -91,4 +91,6 @@ includes.zip
 *.pem
 .pem
 
+_composer.json
+_composer.lock
 vendor/
